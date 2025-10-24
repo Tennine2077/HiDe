@@ -1,3 +1,3 @@
 # HiDe
-The official implement of [HiDe](https://arxiv.org/abs/2510.00054).
+The official implementation of [HiDe](https://arxiv.org/abs/2510.00054).
 The code is cooming soon...
