@@ -1,4 +1,6 @@
-The official implementation of [HiDe: Rethinking The Zoom-IN method in High Resolution MLLMs via Hierarchical Decoupling](https://arxiv.org/abs/2510.00054).
+# HiDe
+
+The official implementation of [HiDe](https://arxiv.org/abs/2510.00054).
 
 > # HiDe: Rethinking The Zoom-IN method in High Resolution MLLMs via Hierarchical Decoupling
 > 
