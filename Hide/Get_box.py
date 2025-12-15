@@ -70,6 +70,7 @@ def messages2out(model,processor,inputs):
     return output_text,end_ques
     
 def messages2att(model,processor,inputs):
+    inputs = inputs.to(model.device)
     end_ques = len(inputs['input_ids'][0])
     img_start = []
     img_end = []
@@ -99,7 +100,8 @@ def messages2att(model,processor,inputs):
         attention.append(out['attentions'][i])
     del inputs,out
     torch.cuda.empty_cache()
-    return attention
+    return attention,idx2word_dicts,img_start,img_end
+
 
 def place_on_center(canvas_bgra, content_bgra):
     """一个辅助函数，将 content 图像(BGRA)居中放置在 canvas 画布(BGRA)上"""
@@ -243,7 +245,20 @@ def merge_overlapping_bboxes(bboxes):
             
     return bboxes
 
-def compact_and_center_with_relative_pos(image, normalized_bboxes, n=1):
+def compact_and_center_with_relative_pos(imgidx, img_nums, image, normalized_bboxes, n=1):
+    """
+    将 BBox 区域紧凑排列（保留相对位置），然后居中放置在透明背景上。
+    
+    新增功能:
+    - n (int): 一个阈值。找出所有被至少 n 个 BBox 覆盖的区域，
+              然后返回所有与这些区域有交集的原始 BBox 的并集。
+
+    Args:
+        image (str): 原始图像的路径或base64字符串。
+        normalized_bboxes (list of lists): Bounding box 列表。
+        n (int): 重叠阈值，默认为1。
+    """
+    # ✅ 1. 解码并统一转换为4通道BGRA格式
     if not image.startswith('data:image;base64,'):
         image64 = image_to_base64(image).split(',')[1]
     elif ',' in image:
@@ -322,7 +337,7 @@ def compact_and_center_with_relative_pos(image, normalized_bboxes, n=1):
             
     masked_img_rgba = cv2.cvtColor(masked_img_bgra, cv2.COLOR_BGRA2RGBA)
     pil_result_masked = Image.fromarray(masked_img_rgba)
-    # pil_result_masked.save(f"case_SPAR_{img_nums}_{imgidx}_result_transparent_bg.png")
+    pil_result_masked.save(f"case_SPAR_{img_nums}_{imgidx}_result_transparent_bg.png")
 
     # --- 紧凑排列逻辑 (逻辑不变) ---
     x_coords = sorted(list(set(bboxes[:, [0, 2]].flatten())))
@@ -364,7 +379,7 @@ def compact_and_center_with_relative_pos(image, normalized_bboxes, n=1):
     
     final_img_rgba = cv2.cvtColor(final_img_bgra, cv2.COLOR_BGRA2RGBA)
     pil_result_centered = Image.fromarray(final_img_rgba)
-    # pil_result_centered.save(f"case_SPAR_{img_nums}_{imgidx}_result_transparent_bg_center.png")
+    pil_result_centered.save(f"case_SPAR_{img_nums}_{imgidx}_result_transparent_bg_center.png")
 
     # ✅ 6. 对紧凑图进行缩放和返回
     composite_image_rgba = cv2.cvtColor(composite_image_bgra, cv2.COLOR_BGRA2RGBA)
@@ -373,7 +388,7 @@ def compact_and_center_with_relative_pos(image, normalized_bboxes, n=1):
     up_sclae = 1
     new_size = (round(pil_result.width * up_sclae), round(pil_result.height * up_sclae))
     pil_result = pil_result.resize(new_size, Image.Resampling.BILINEAR)
-    # pil_result.save(f"case_SPAR_{img_nums}_{imgidx}_result.png")
+    pil_result.save(f"case_SPAR_{img_nums}_{imgidx}_result.png")
     
     return_bboxes = []
     for x0, y0, x1, y1 in bboxes:
@@ -452,8 +467,7 @@ def find_top_n_attended_regions(norm_att, n, threshold=0.5):
 
     return final_boxes, len(final_boxes)
 
-def from_img_and_att_get_cropbox(inputs,processor,attention, dicts, img_url, img_start, img_end,sig,thre):
-    end_ques = len(inputs['input_ids'][0])
+def from_img_and_att_get_cropbox(inputs,attention, dicts, img_url, img_start, img_end,sig,thre):
     tmp_att = []
     for i in range(len(attention)):
         if attention[i] is None:
@@ -465,7 +479,7 @@ def from_img_and_att_get_cropbox(inputs,processor,attention, dicts, img_url, img
     results = {}
     for s in sig:
         for t in thre:
-            accept_att = process_notsave(start_k, end_k, attention, inputs, dicts, img_url, img_start, img_end,s)
+            accept_att = process(dicts, start_k, end_k, attention, inputs, img_start, img_end,s)
             # print(accept_att)
             imgs_words_att_box = {}
             for img_idx in accept_att:
