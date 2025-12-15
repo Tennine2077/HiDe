@@ -53,7 +53,7 @@ def get_inputs(messages,processor,model):
     inputs = inputs.to(model.device)
     return text,image_inputs,video_inputs,inputs,video_kwargs
 
-def messages2out(model,processor,text,image_inputs,video_inputs,inputs):
+def messages2out(model,processor,inputs):
     inputs = inputs.to(model.device)
     end_ques = len(inputs['input_ids'][0])
 
