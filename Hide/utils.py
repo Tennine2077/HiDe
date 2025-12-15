@@ -23,7 +23,7 @@ from scipy.ndimage import uniform_filter
 from scipy.ndimage import median_filter
 import torch
 
-def process_notsave(start_k, end_k, attention, inputs, dicts, img_url, img_start, img_end, sig):
+def process(start_k, end_k, attention, inputs, dicts, img_url, img_start, img_end, sig):
     accept_att = {}
     noise_token_num = 8
     noise_mean = [[0 for k in range(noise_token_num)] for i in range(len(inputs["image_grid_thw"]))]
