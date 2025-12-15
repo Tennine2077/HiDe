@@ -157,8 +157,8 @@ def cycle_epoch_infer(gpu_id,rank,dataset_part,savedir,max_pixels,sig,thre):
         device_map=device
     )
 
-    att_processor = AutoProcessor.from_pretrained(model_path,use_fast=True,min_pixels=256*28*28,max_pixels=max_pixels*28*28)
-    ans_processor = AutoProcessor.from_pretrained(model_path,use_fast=True,min_pixels=256*28*28,max_pixels=max_pixels*28*28)
+    qwen_processor = AutoProcessor.from_pretrained(model_path,use_fast=True,min_pixels=256*28*28,max_pixels=max_pixels*28*28)
+
     for sample in tqdm(dataset_part):
         results = sample
         img_url = [sample["image"]]
@@ -178,7 +178,8 @@ def cycle_epoch_infer(gpu_id,rank,dataset_part,savedir,max_pixels,sig,thre):
 
         #直接回答
         messages[-1]["content"].append({"type": "text", "text": ques})
-        output_text,end_ques = messages2out(messages,model,ans_processor)
+        text,image_inputs,video_inputs,inputs,video_kwargs = get_inputs(messages,processor,model)
+        output_text,end_ques = messages2out(messages,model,qwen_processor)
         results["answer"] = {}
         results["answer"]["ori"] = output_text[0]
         results["bounding_box"] = {}
