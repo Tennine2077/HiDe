@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import zoom
 import numpy as np
 from tqdm import tqdm
-from is_attention_focused import *
+from utiles import *
 import json
 import torch.multiprocessing as mp
 import multiprocessing
@@ -23,14 +23,11 @@ import gc
 import base64
 import multiprocessing
 from multiprocessing import Pool
-from once_inference import messages2out,messages2att,from_img_and_att_get_cropbox,get_inputs
+from Get_box import messages2out,messages2att,from_img_and_att_get_cropbox,get_inputs
 import shutil
 import cv2
 
-def once_infer(model,att_processor,ans_processor,sample,messages,img_url,ori_img_url,ques,sig,thre):
-    #得到att
-    prompt_output_text = [""]
-    ques = messages[-1]["content"][-1]["text"]
+def once_infer(model,qwen_processor,sample,messages,img_url,ori_img_url,ques,sig,thre):
     prompt_ques = '''
 You are a highly precise language analysis engine. Your sole function is to extract entities (e.g., objects, people) from a user's question, and deconstruct them into a canonical, attribute-based format by strictly following a set of rules and a thinking process.
 
@@ -91,12 +88,11 @@ Now, following all the rules above, extract the entities from the question below
 {input_text}
 '''
 
-    prompt_messages = [{"role": "user","content": [{"type": "text", "text": prompt_ques.format(input_text=ques.replace("\nAnswer with the option's letter from the given choices directly.","").replace("\nAnswer the question using a single word or phrase.","").replace("\nAnswer with YES or NO directly:",""))}],},]
-    text,image_inputs,video_inputs,inputs,video_kwargs = get_inputs(messages,qwen_processor,model)
+    prompt_messages = [{"role": "user","content": [{"type": "text", "text": prompt_ques.format(input_text=ques)}],},]
+    text,image_inputs,video_inputs,inputs,video_kwargs = get_inputs(prompt_messages,qwen_processor,model)
     prompt_output_text,_ = messages2out(model,qwen_processor,inputs)
     answer_out = prompt_output_text[0].split("<FINAL_OUTPUT>")[-1].split("</FINAL_OUTPUT>")[0]
     messages[-1]["content"] = messages[-1]["content"][:-1]
-    # messages[-1]["content"].append({"type": "text", "text": "Search the following entities in the images: " + ques})
     outputs = {}
     
     #如果提取出了实体词
@@ -104,7 +100,7 @@ Now, following all the rules above, extract the entities from the question below
         messages[-1]["content"].append({"type": "text", "text": "Search the following entities in the images: "+answer_out})
         text,image_inputs,video_inputs,inputs,video_kwargs = get_inputs(messages,qwen_processor,model)
         attention,idx2word_dicts,img_start,img_end = messages2att(model,qwen_processor,inputs)  # Retrieve attention from model outputs
-        results = from_img_and_att_get_cropbox(inputs,qwen_processor,attention, idx2word_dicts, img_url, img_start, img_end,sig,thre)
+        results = from_img_and_att_get_cropbox(inputs,attention, idx2word_dicts, img_url, img_start, img_end,sig,thre)
         for s in sig:
             for t in thre:
                 img_merged_boxes,crop_list,words_lines,highlight_imgs,bounding_boxes = results[str(s)][str(t)]
@@ -116,14 +112,15 @@ Now, following all the rules above, extract the entities from the question below
                 for h_img in highlight_imgs:
                     messages[-1]["content"].append({"type": "image", "image": h_img})
                 #加上问题
-                messages[-1]["content"].append({"type": "text", "text": ques})
-                output_text,_ = messages2out(messages,model,qwen_processor)
+                messages[-1]["content"].append({"type": "text", "text": ques+"\nAnswer with the option's letter from the given choices directly."})
+                text,image_inputs,video_inputs,inputs,video_kwargs = get_inputs(messages,qwen_processor,model)
+                output_text,_ = messages2out(model,qwen_processor,inputs)
                 if not str(s) in outputs:outputs[str(s)] = {}
                 outputs[str(s)][str(t)] = [[answer_out],output_text,crop_list,highlight_imgs,messages,words_lines,img_merged_boxes,bounding_boxes]
                 
     #没有提取出实体词
     else:
-        messages[-1]["content"].append({"type": "text", "text": "Search the following entities in the images: " + ques})
+        messages[-1]["content"].append({"type": "text", "text": "Search the following entities in the images: " + ques +"\nAnswer with the option's letter from the given choices directly."})
         text,image_inputs,video_inputs,inputs,video_kwargs = get_inputs(messages,qwen_processor,model)
         attention,idx2word_dicts,img_start,img_end = messages2att(model,qwen_processor,inputs)  # Retrieve attention from model outputs
         results = from_img_and_att_get_cropbox(inputs,qwen_processor,attention, idx2word_dicts, img_url, img_start, img_end,sig,thre)
@@ -138,8 +135,9 @@ Now, following all the rules above, extract the entities from the question below
                 for h_img in highlight_imgs:
                     messages[-1]["content"].append({"type": "image", "image": h_img})
                 #加上问题
-                messages[-1]["content"].append({"type": "text", "text": ques})
-                output_text,_ = messages2out(messages,model,qwen_processor)
+                messages[-1]["content"].append({"type": "text", "text": ques+"\nAnswer with the option's letter from the given choices directly."})
+                text,image_inputs,video_inputs,inputs,video_kwargs = get_inputs(messages,qwen_processor,model)
+                output_text,_ = messages2out(model,qwen_processor,inputs)
                 if not str(s) in outputs:outputs[str(s)] = {}
                 outputs[str(s)][str(t)] = [[answer_out],output_text,crop_list,highlight_imgs,messages,words_lines,img_merged_boxes,bounding_boxes]
     return outputs
@@ -152,7 +150,7 @@ def cycle_epoch_infer(gpu_id,rank,dataset_part,savedir,max_pixels,sig,thre):
     print(rank,len(dataset_part),device)
 
     model_path = r"/home/luohaoyu.lhy/Shijiu/Qwen/Qwen2.5-VL-7B-Instruct"
-    model = Qwen2_5_VLForConditionalGeneration_re.from_pretrained(
+    model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         model_path,
         torch_dtype=torch.bfloat16,
         attn_implementation="flash_attention_2",
@@ -180,9 +178,9 @@ def cycle_epoch_infer(gpu_id,rank,dataset_part,savedir,max_pixels,sig,thre):
         ques = sample["Text"]
 
         #直接回答
-        messages[-1]["content"].append({"type": "text", "text": ques})
-        text,image_inputs,video_inputs,inputs,video_kwargs = get_inputs(messages,processor,model)
-        output_text,end_ques = messages2out(messages,model,qwen_processor)
+        messages[-1]["content"].append({"type": "text", "text": ques+"\nAnswer with the option's letter from the given choices directly."})
+        text,image_inputs,video_inputs,inputs,video_kwargs = get_inputs(messages,qwen_processor,model)
+        output_text,end_ques = messages2out(model,qwen_processor,inputs)
         results["answer"] = {}
         results["answer"]["ori"] = output_text[0]
         results["bounding_box"] = {}
@@ -190,13 +188,13 @@ def cycle_epoch_infer(gpu_id,rank,dataset_part,savedir,max_pixels,sig,thre):
         torch.cuda.empty_cache()
         
         #先进行att计算，再回答
-        outputs = once_infer(model,att_processor,ans_processor,sample,messages,img_url,ori_img_url,ques,sig,thre)
+        outputs = once_infer(model,qwen_processor,sample,messages,img_url,ori_img_url,ques,sig,thre)
         for s in sig:
             for t in thre:
                 prompt_output_text,output_text,crop_list,highlight_imgs,messages,words_lines,img_merged_boxes,bounding_boxes = outputs[str(s)][str(t)]
-                results["answer"][f"TAD_{i+1}_s{s}_t{t}"] = output_text[0]
-                results["prompt_text"][f"TAD_{i+1}"] = prompt_output_text[0]
-                results["bounding_box"][f"TAD_{i+1}_s{s}_t{t}"] = bounding_boxes
+                results["answer"][f"HiDe_s{s}_t{t}"] = output_text[0]
+                results["prompt_text"][f"HiDe"] = prompt_output_text[0]
+                results["bounding_box"][f"HiDe_s{s}_t{t}"] = bounding_boxes
         
         #保存答案
         serialize_dict(results,savedir)
