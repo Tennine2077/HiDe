@@ -23,11 +23,11 @@ from scipy.ndimage import uniform_filter
 from scipy.ndimage import median_filter
 import torch
 
-def process(start_k, end_k, attention, inputs, dicts, img_url, img_start, img_end, sig):
+def process(dicts, start_k, end_k, attention, inputs, img_start, img_end, sig):
     accept_att = {}
     noise_token_num = 8
     noise_mean = [[0 for k in range(noise_token_num)] for i in range(len(inputs["image_grid_thw"]))]
-    for k in range(start_k,end_k-2):
+    for k in range(start_k,end_k-4):
         max_att_sum = 0
         per_img_attention = []
         for img_idx in range(len(inputs["image_grid_thw"])):
@@ -67,9 +67,15 @@ def process(start_k, end_k, attention, inputs, dicts, img_url, img_start, img_en
         accept_s = accept_s - accept_s.min()
         accept_s = accept_s / accept_s.max()
         if noise_token_num > 0:
+            # plt.imshow(accept_s[0])
+            # plt.savefig(f'{img_idx}_{k}_{dicts[inputs["input_ids"][0][k].cpu().item()].replace(r"/",r"[]")}.png')
+            # plt.close()
             accept_s -= np.array(noise_mean[img_idx]).mean(axis=0)
+            # plt.imshow(accept_s[0])
+            # plt.savefig(f'{img_idx}_{k}_{dicts[inputs["input_ids"][0][k].cpu().item()].replace(r"/",r"[]")}_clearn.png')
+            # plt.close()
             accept_s[accept_s<0] = 0
-        if accept_s.max() == 0: continue
+        if accept_s.max() <= 0: continue
         accept_s = accept_s - accept_s.min()
         accept_s = accept_s / accept_s.max()
         accept_att[img_idx][k]=accept_s
