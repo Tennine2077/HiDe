@@ -101,7 +101,8 @@ Now, following all the rules above, extract the entities from the question below
     #如果提取出了实体词
     if answer_out: 
         messages[-1]["content"].append({"type": "text", "text": "Search the following entities in the images: "+answer_out})
-        attention,idx2word_dicts,img_start,img_end = messages2att(messages,model,att_processor)  # Retrieve attention from model outputs
+        text,image_inputs,video_inputs,inputs,video_kwargs = get_inputs(messages,processor,model)
+        attention,idx2word_dicts,img_start,img_end = messages2att(inputs,model,att_processor)  # Retrieve attention from model outputs
         results = from_img_and_att_get_cropbox(messages,att_processor,attention, idx2word_dicts, img_url, img_start, img_end,sig,thre)
         for s in sig:
             for t in thre:
@@ -122,7 +123,8 @@ Now, following all the rules above, extract the entities from the question below
     #没有提取出实体词
     else:
         messages[-1]["content"].append({"type": "text", "text": "Search the following entities in the images: " + ques})
-        attention,idx2word_dicts,img_start,img_end = messages2att(messages,model,att_processor)  # Retrieve attention from model outputs
+        text,image_inputs,video_inputs,inputs,video_kwargs = get_inputs(messages,processor,model)
+        attention,idx2word_dicts,img_start,img_end = messages2att(inputs,model,att_processor)  # Retrieve attention from model outputs
         results = from_img_and_att_get_cropbox(messages,att_processor,attention, idx2word_dicts, img_url, img_start, img_end,sig,thre)
         for s in sig:
             for t in thre:
