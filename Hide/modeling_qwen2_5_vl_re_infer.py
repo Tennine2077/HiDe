@@ -22,8 +22,11 @@ from transformers.utils.deprecation import deprecate_kwarg
 from transformers.models.qwen2.modeling_qwen2 import Qwen2RMSNorm
 from transformers.models.qwen2_5_vl.configuration_qwen2_5_vl import Qwen2_5_VLConfig, Qwen2_5_VLTextConfig, Qwen2_5_VLVisionConfig
 
-# SELECT_LAYER = [20] #7b
-SELECT_LAYER = [22] #3b
+#只在对应的层数计算att socre，其余层数返回None
+SELECT_LAYER = [20] #7b
+# SELECT_LAYER = [22] #3b
+
+#若为True，则在全层数计算att score（此项等级高于SELECT_LAYER）
 USE_ALLATT = False
 # USE_ALLATT = True
 
