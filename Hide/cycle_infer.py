@@ -24,6 +24,7 @@ from multiprocessing import Pool
 from accelerate import infer_auto_device_map, dispatch_model
 import shutil
 from inference import cycle_epoch_infer
+from utiles import *
 import traceback
 import subprocess
 
@@ -109,7 +110,9 @@ if __name__ == "__main__":
     # 👇 必须放在这里！
     mp.set_start_method('spawn', force=True)
     maxp = 16384
-    Parallels = True
+    #并行多开线程计算，自动寻找满足条件的GPU
+    Parallels = False
+    #超参数
     sigma = [3]
     threshold = [0.7]
     seed = 2077
@@ -117,6 +120,5 @@ if __name__ == "__main__":
     current_time = time.localtime()
     formatted_time = time.strftime("%Y-%m-%d", current_time)
     datasetdir = f"Vstar.json"
-    for ansatt_lenth in ansatt_lenths:
-        savejson = f"Vstar_results.json"
-        main(datasetdir,savejson,maxp,Parallels,sigma,threshold,4)
+    savejson = f"Vstar_results.json"
+    main(datasetdir,savejson,maxp,Parallels,sigma,threshold,4)
