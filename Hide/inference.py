@@ -97,6 +97,8 @@ Now, following all the rules above, extract the entities from the question below
     messages[-1]["content"] = messages[-1]["content"][:-1]
     # messages[-1]["content"].append({"type": "text", "text": "Search the following entities in the images: " + ques})
     outputs = {}
+    
+    #如果提取出了实体词
     if answer_out: 
         messages[-1]["content"].append({"type": "text", "text": "Search the following entities in the images: "+answer_out})
         attention,idx2word_dicts,img_start,img_end = messages2att(messages,model,att_processor)  # Retrieve attention from model outputs
@@ -116,6 +118,8 @@ Now, following all the rules above, extract the entities from the question below
                 output_text,_ = messages2out(messages,model,ans_processor)
                 if not str(s) in outputs:outputs[str(s)] = {}
                 outputs[str(s)][str(t)] = [[answer_out],output_text,crop_list,highlight_imgs,messages,words_lines,img_merged_boxes,bounding_boxes]
+                
+    #没有提取出实体词
     else:
         messages[-1]["content"].append({"type": "text", "text": "Search the following entities in the images: " + ques})
         attention,idx2word_dicts,img_start,img_end = messages2att(messages,model,att_processor)  # Retrieve attention from model outputs
@@ -124,7 +128,7 @@ Now, following all the rules above, extract the entities from the question below
             for t in thre:
                 img_merged_boxes,crop_list,words_lines,highlight_imgs,bounding_boxes = results[str(s)][str(t)]
                 messages = [ {"role": "user","content": [],},]
-                # # #加上原图
+                #加上原图
                 for img in ori_img_url:
                     messages[-1]["content"].append({"type": "image", "image": img})
                 #加上这次处理新出的图
@@ -137,7 +141,7 @@ Now, following all the rules above, extract the entities from the question below
                 outputs[str(s)][str(t)] = [[answer_out],output_text,crop_list,highlight_imgs,messages,words_lines,img_merged_boxes,bounding_boxes]
     return outputs
 
-def cycle_epoch_infer(gpu_id,rank,dataset_part,savedir,max_pixels,cycle_times,transp,sig,thre):
+def cycle_epoch_infer(gpu_id,rank,dataset_part,savedir,max_pixels,sig,thre):
     current_time = time.localtime()
     formatted_time = time.strftime("%Y-%m-%d", current_time)
     device = f"cuda:{gpu_id}"
@@ -179,17 +183,17 @@ def cycle_epoch_infer(gpu_id,rank,dataset_part,savedir,max_pixels,cycle_times,tr
         results["answer"]["ori"] = output_text[0]
         results["bounding_box"] = {}
         results["prompt_text"] = {}
-        for i in range(cycle_times):
-            # results["bounding_box"][f"TAD_{i+1}"] = []
-            torch.cuda.empty_cache()
-            #先进行att计算，再回答
-            outputs = once_infer(model,att_processor,ans_processor,sample,messages,img_url,ori_img_url,ques,sig,thre)
-            for s in sig:
-                for t in thre:
-                    prompt_output_text,output_text,crop_list,highlight_imgs,messages,words_lines,img_merged_boxes,bounding_boxes = outputs[str(s)][str(t)]
-                    results["answer"][f"TAD_{i+1}_s{s}_t{t}"] = output_text[0]
-                    results["prompt_text"][f"TAD_{i+1}"] = prompt_output_text[0]
-                    results["bounding_box"][f"TAD_{i+1}_s{s}_t{t}"] = bounding_boxes
+        torch.cuda.empty_cache()
+        
+        #先进行att计算，再回答
+        outputs = once_infer(model,att_processor,ans_processor,sample,messages,img_url,ori_img_url,ques,sig,thre)
+        for s in sig:
+            for t in thre:
+                prompt_output_text,output_text,crop_list,highlight_imgs,messages,words_lines,img_merged_boxes,bounding_boxes = outputs[str(s)][str(t)]
+                results["answer"][f"TAD_{i+1}_s{s}_t{t}"] = output_text[0]
+                results["prompt_text"][f"TAD_{i+1}"] = prompt_output_text[0]
+                results["bounding_box"][f"TAD_{i+1}_s{s}_t{t}"] = bounding_boxes
+        
         #保存答案
         serialize_dict(results,savedir)
         torch.cuda.empty_cache()
