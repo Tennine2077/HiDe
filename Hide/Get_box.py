@@ -452,35 +452,88 @@ def find_top_n_attended_regions(norm_att, n, threshold=0.5):
 
     return final_boxes, len(final_boxes)
 
-def from_img_and_att_get_cropbox(processor,attention,img_url,sig,thre,inputs,ansatt_lenth,Noise_lenth):
+def from_img_and_att_get_cropbox(inputs,processor,attention, dicts, img_url, img_start, img_end,sig,thre):
+    end_ques = len(inputs['input_ids'][0])
     tmp_att = []
     for i in range(len(attention)):
         if attention[i] is None:
             continue
         tmp_att.append(attention[i])
     attention = tmp_att
+    start_k = img_end[-1]+1
+    end_k = len(inputs['input_ids'][0])
     results = {}
     for s in sig:
         for t in thre:
-            norm_att = process(processor, attention, inputs, s, ansatt_lenth, Noise_lenth)
-            save_boxs = []
-            for att in norm_att:
-                boxs, rigion_nums = find_top_n_attended_regions(att, 100, t)
-                if boxs:
-                    H, W = att.shape
-                    for box in boxs:
-                        x0,y0,x1,y1 = box
-                        bbox_norm = (x0 / W, y0 / H, (x1) / W, (y1) / H)
-                        save_boxs.append(bbox_norm)
-                # hot_attention_map_show(image,att_map,save=f'{img_idx}_{word}_{dicts[inputs["input_ids"][0][word].cpu().item()].replace(r"/",r"[]")}.png',bounding_boxes=save_boxs)
-            bounding_boxes = []
+            accept_att = process_notsave(start_k, end_k, attention, inputs, dicts, img_url, img_start, img_end,s)
+            # print(accept_att)
+            imgs_words_att_box = {}
+            for img_idx in accept_att:
+                accept_word_att = accept_att[img_idx]
+                words_att_box = {}
+                for word in accept_word_att:
+                    att_map = accept_word_att[word][0]
+                    boxs, rigion_nums = find_top_n_attended_regions(att_map, 100, t)
+                    total_attention = np.sum(att_map)
+                    img_height, img_width = att_map.shape
+                    total_area = img_width * img_height
+                    save_boxs = []
+                    if boxs:
+                        H, W = att_map.shape
+                        words_att_box[word] = []
+                        for box in boxs:
+                            x0,y0,x1,y1 = box
+                            # 计算 box 面积
+                            bbox_norm = (x0 / W, y0 / H, (x1) / W, (y1) / H)
+                            x0,y0,x1,y1 = bbox_norm
+                            region = att_map[int(y0*H):int(y1*H), int(x0*W):int(x1*W)]
+                            region_sum = np.sum(region)
+                            words_att_box[word].append(bbox_norm)
+                            save_boxs.append(box)
+                imgs_words_att_box[img_idx] = words_att_box
+
+            for img_idx in imgs_words_att_box:
+                max_word_idx = 0
+                for words_idx in imgs_words_att_box[img_idx]:
+                    max_word_idx = max(max_word_idx,words_idx)
+            img_merged_boxes = swap_and_rebuild_dict(imgs_words_att_box)
+
+            words_lines = {}
+            get_words = ""
+            # print(start_k,end_k)
+            for i in range(start_k,end_k):
+                token_idx = inputs['input_ids'][0][i].cpu().item()
+                # print(i,dicts[token_idx],end="||")
+                if token_idx < 151643:
+                    get_words+=dicts[token_idx]
+                for word in img_merged_boxes:
+                    if i == word+1:
+                        words_lines[word] = get_words
+                        get_words = ''
+            for word in img_merged_boxes:
+                if i == word:
+                    words_lines[word] = get_words
+                    get_words = ''
+            words_lines[-1] = get_words
+            get_words = ''
+            crop_list = {}
+            bounding_boxes = {}
             highlight_imgs = []
-            # print(save_boxs)
-            img,bboxs = compact_and_center_with_relative_pos(img_url[0],save_boxs,ansatt_lenth//2)
-            if img:
-                bounding_boxes.append(bboxs)
-                for im in img:
-                    highlight_imgs.append(im)
+            for word in img_merged_boxes:
+                if not word in crop_list:
+                    crop_list[word] = {}
+                for imgidx in img_merged_boxes[word]:
+                    if not imgidx in bounding_boxes: bounding_boxes[imgidx] = []
+                    for boxid in range(len(img_merged_boxes[word][imgidx])):
+                        bounding_boxes[imgidx].append(img_merged_boxes[word][imgidx][boxid])
+            for imgidx in bounding_boxes:
+                img,bboxs = compact_and_center_with_relative_pos(imgidx,len(img_url),img_url[imgidx],bounding_boxes[imgidx])
+                if img:
+                    bounding_boxes[imgidx] = bboxs
+                    for im in img:
+                        highlight_imgs.append(im)
+                # highlight_imgs.append(compact_and_center_with_relative_pos_in_ori(image_list[imgidx],bounding_boxes[imgidx]))
             if not str(s) in results:results[str(s)] = {}
-            results[str(s)][str(t)] = [highlight_imgs,bounding_boxes]
+            # if not str(i) in results[s]:results[s][t] = {}
+            results[str(s)][str(t)] = [img_merged_boxes,crop_list,words_lines,highlight_imgs,bounding_boxes]
     return results
