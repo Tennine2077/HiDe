@@ -1,6 +1,4 @@
 import os
-# avaliable_cuda = "0,3,4,5,6,7,8,9,10,11,12,13,14,15"
-# os.environ["CUDA_VISIBLE_DEVICES"] = avaliable_cuda
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoTokenizer, AutoProcessor
 from qwen_vl_utils import process_vision_info
 import torch
