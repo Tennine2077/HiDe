@@ -69,7 +69,7 @@ def messages2out(model,processor,text,image_inputs,video_inputs,inputs):
     torch.cuda.empty_cache()
     return output_text,end_ques
     
-def messages2att(model,processor,text,image_inputs,video_inputs,inputs):
+def messages2att(model,processor,inputs):
     end_ques = len(inputs['input_ids'][0])
     img_start = []
     img_end = []
