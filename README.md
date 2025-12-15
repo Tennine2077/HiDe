@@ -49,6 +49,7 @@ Run
 ```
 cd HiDe
 python cycle_infer.py
+python Vstar_Metric.py
 ```
 
 Please consider to cite HiDe if it helps your research.
