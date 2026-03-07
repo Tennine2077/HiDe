@@ -30,6 +30,11 @@ Multimodal Large Language Models (MLLMs) have made significant strides in visual
 
 Our analysis reveals a different story: the main issue is **not object size**, but rather **complex background interference**! 🎭
 
+<div align="center">
+<img src="https://arxiv.org/html/2510.00054/pics/method.png" width="90%" alt="HiDe Framework"/>
+<p><em>Figure: Overview of the HiDe Framework (TAD + LPD)</em></p>
+</div>
+
 ### 💡 Our Solution
 
 We propose the **Hierarchical Decoupling Framework (HiDe)** — a **training-free** framework that includes:
@@ -57,7 +62,7 @@ HiDe/
 │   │   ├── inference.py
 │   │   ├── cycle_infer.py
 │   │   ├── Get_box.py
-│   │   └── utiles (1).py
+│   │   └── utiles.py
 │   │
 │   └── Internvl/             # 👁️ InternVL3 Implementation
 │       ├── cycle_inference_internvl.py

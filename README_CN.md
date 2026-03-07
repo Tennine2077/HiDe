@@ -30,6 +30,11 @@
 
 我们的分析揭示了一个不同的真相：主要问题**不是目标尺寸**，而是**复杂的背景干扰**！🎭
 
+<div align="center">
+<img src="https://arxiv.org/html/2510.00054/pics/method.png" width="90%" alt="HiDe Framework"/>
+<p><em>图：HiDe 框架概览 (TAD + LPD)</em></p>
+</div>
+
 ### 💡 我们的解决方案
 
 我们提出了 **HiDe（层次化解耦框架）**—— 一个**无需训练**的框架，包含：
@@ -59,7 +64,7 @@ HiDe/
 │   │   ├── inference.py
 │   │   ├── cycle_infer.py
 │   │   ├── Get_box.py
-│   │   └── utiles (1).py
+│   │   └── utiles.py
 │   │
 │   └── Internvl/             # 👁️ InternVL3 实现
 │       ├── cycle_inference_internvl.py
