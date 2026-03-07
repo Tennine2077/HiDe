@@ -1,34 +1,93 @@
-# HiDe
+# 🙈 HiDe
 
-The official implementation of [HiDe](https://arxiv.org/abs/2510.00054).
+> **The official implementation of [HiDe: Rethinking The Zoom-IN method in High Resolution MLLMs via Hierarchical Decoupling](https://arxiv.org/abs/2510.00054)**
 
-> # HiDe: Rethinking The Zoom-IN method in High Resolution MLLMs via Hierarchical Decoupling
-> 
-> Xianjie Liu, Yiman Hu, Yixiong Zou, Liang Wu, Jian Xu, Bo Zheng
->
-> 💻2025/12/15: We released the code on GitHub, if you have any questions, ask us by issues~ 
->
-> 📕2025/10/28: We released the paper on the ArXiv.
-> 
-> # Abstract
-> Multimodal Large Language Models (MLLMs) have made significant strides in visual understanding tasks. However, their performance on high-resolution images remains suboptimal. While existing approaches often attribute this limitation to perceptual constraints and argue that MLLMs struggle to recognize small objects, leading them to use "zoom in" strategies for better detail, our analysis reveals a different cause: the main issue is not object size, but rather caused by complex background interference. We systematically analyze this "zoom in" operation through a series of decoupling experiments and propose the Hierarchical Decoupling Framework (HiDe), a training-free framework that uses Token-wise Attention Decoupling (TAD) to decouple the question tokens and identify the key information tokens, then leverages their attention weights to achieve precise alignment with the target visual regions. Subsequently, it employs Layout-Preserving Decoupling (LPD) to decouple these regions from the background and reconstructs a compact representation that preserves essential spatial layouts while eliminating background interference. HiDe sets a new SOTA on V\*Bench, HRBench4K, and HRBench8K, boosting Qwen2.5-VL 7B and InternVL3 8B to SOTA (92.1% and 91.6% on V\*Bench), even surpassing RL methods. After optimization, HiDe uses 75% less memory than the previous training-free approach.
+<div align="center">
 
-<img width="1263" height="609" alt="image" src="https://github.com/user-attachments/assets/64b7b8bd-ab35-4f88-af75-2361d1141e1d" />
+[![Paper](https://img.shields.io/badge/📜_Paper-ArXiv-red)](https://arxiv.org/abs/2510.00054)
+[![License](https://img.shields.io/badge/📄_License-Apache_2.0-green)](LICENSE)
+[![Python](https://img.shields.io/badge/🐍_Python-3.11+-blue)]()
 
-<img width="1122" height="577" alt="image" src="https://github.com/user-attachments/assets/192f097d-850e-4b25-94b1-080887df7a96" />
+</div>
 
+---
 
-## Installation
+## 📰 News
+
+| Date | Update |
+|:----:|:-------|
+| 🔥 **2026/03/07** | Added support for Qwen3-VL! |
+| 💻 **2025/12/15** | Code released on GitHub! Feel free to open issues if you have questions~ |
+| 📕 **2025/10/28** | Paper released on ArXiv! |
+
+---
+
+## 🎯 What is HiDe?
+
+Multimodal Large Language Models (MLLMs) have made significant strides in visual understanding tasks. However, their performance on **high-resolution images** remains suboptimal.
+
+**Wait... is it really about "small objects"?** 🤔
+
+Our analysis reveals a different story: the main issue is **not object size**, but rather **complex background interference**! 🎭
+
+### 💡 Our Solution
+
+We propose the **Hierarchical Decoupling Framework (HiDe)** — a **training-free** framework that includes:
+
+| Component | What it does |
+|:----------|:--------------|
+| 🔍 **Token-wise Attention Decoupling (TAD)** | Decouples question tokens and identifies key information tokens, then leverages attention weights for precise alignment with target visual regions |
+| ✂️ **Layout-Preserving Decoupling (LPD)** | Decouples target regions from background and reconstructs a compact representation while preserving essential spatial layouts |
+
+---
+
+## 🗂️ Repository Structure
+
 ```
-conda create -n HiDe python = 3.11.4
+HiDe/
+├── Hide/
+│   ├── Qwen2.5/              # 🤖 Qwen2.5-VL Implementation
+│   │   ├── inference.py          # Core inference logic
+│   │   ├── cycle_infer.py        # Multi-GPU inference entry
+│   │   ├── Get_box.py            # Attention-based bounding box extraction
+│   │   ├── Vstar_Metric.py       # Evaluation metrics
+│   │   └── utiles.py             # Utility functions
+│   │
+│   ├── Qwen3/                # 🔥 Qwen3-VL Implementation
+│   │   ├── inference.py
+│   │   ├── cycle_infer.py
+│   │   ├── Get_box.py
+│   │   └── utiles (1).py
+│   │
+│   └── Internvl/             # 👁️ InternVL3 Implementation
+│       ├── cycle_inference_internvl.py
+│       └── utiles_internvl.py
+│
+├── requirements.txt          # 📦 Dependencies
+├── LICENSE
+└── README.md
+```
+
+---
+
+## 🛠️ Installation
+
+```bash
+# Create conda environment
+conda create -n HiDe python=3.11.4
 conda activate HiDe
 
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-## Dataset Preparation
-The structure of the "**data**" should be json as follows:
-```
+---
+
+## 📊 Dataset Preparation
+
+Prepare your dataset as a JSON file with the following structure:
+
+```json
 [
     {
         "id": "0",
@@ -43,20 +102,60 @@ The structure of the "**data**" should be json as follows:
         "labels": "C",
         "image_path": "vstar_bench/direct_attributes/sa_86101.jpg",
         "category": "direct_attributes"
-    },
+    }
 ]
 ```
 
-# Test and metric
-Run
-```
-cd HiDe
+---
+
+## 🚀 Quick Start
+
+### For Qwen2.5-VL
+
+```bash
+cd Hide/Qwen2.5
+
+# Run inference
 python cycle_infer.py
+
+# Calculate metrics
 python Vstar_Metric.py
 ```
 
-Please consider to cite HiDe if it helps your research.
+### For Qwen3-VL
+
+```bash
+cd Hide/Qwen3
+python cycle_infer.py
 ```
+
+### For InternVL3
+
+```bash
+cd Hide/Internvl
+python cycle_inference_internvl.py
+```
+
+---
+
+## ⚙️ Configuration
+
+Key hyperparameters you can adjust in `cycle_infer.py`:
+
+| Parameter | Description | Default |
+|:----------|:------------|:--------|
+| `sigma` | Gaussian filter sigma for attention smoothing | `[3]` |
+| `threshold` | Threshold for attention binarization | `[0.7]` |
+| `max_pixels` | Maximum pixel count for image processing | `16384` |
+| `Parallels` | Enable multi-GPU parallel processing | `True/False` |
+
+---
+
+## 📝 Citation
+
+If you find HiDe helpful in your research, please consider citing:
+
+```bibtex
 @misc{liu2025hiderethinkingzoominmethod,
       title={HiDe: Rethinking The Zoom-IN method in High Resolution MLLMs via Hierarchical Decoupling}, 
       author={Xianjie Liu and Yiman Hu and Yixiong Zou and Liang Wu and Jian Xu and Bo Zheng},
@@ -67,3 +166,28 @@ Please consider to cite HiDe if it helps your research.
       url={https://arxiv.org/abs/2510.00054}, 
 }
 ```
+
+---
+
+## 📄 License
+
+This project is licensed under the Apache 2.0 License — see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🤝 Acknowledgements
+
+Thanks to all the amazing open-source projects that made this possible:
+- [Qwen2.5-VL](https://github.com/QwenLM/Qwen2.5-VL)
+- [Qwen3-VL](https://github.com/QwenLM/Qwen3-VL)
+- [InternVL](https://github.com/OpenGVLab/InternVL)
+
+---
+
+<div align="center">
+
+**Made with ❤️ by the HiDe Team**
+
+⭐ If you find this project useful, please give us a star! ⭐
+
+</div>
