@@ -7,6 +7,7 @@
 [![Paper](https://img.shields.io/badge/📜_Paper-ArXiv-red)](https://arxiv.org/abs/2510.00054)
 [![License](https://img.shields.io/badge/📄_License-Apache_2.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/🐍_Python-3.11+-blue)]()
+[![中文文档](https://img.shields.io/badge/🇨🇳_中文文档-README_CN-blue)](README_CN.md)
 
 </div>
 

@@ -7,6 +7,7 @@
 [![论文](https://img.shields.io/badge/📜_论文-ArXiv-red)](https://arxiv.org/abs/2510.00054)
 [![许可证](https://img.shields.io/badge/📄_许可证-Apache_2.0-green)](LICENSE)
 [![Python](https://img.shields.io/badge/🐍_Python-3.11+-blue)]()
+[![English](https://img.shields.io/badge/🇺🇸_English-README-blue)](README.md)
 
 </div>
 
