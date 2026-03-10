@@ -3,7 +3,7 @@
 # 深��学习框架
 accelerate==1.0.0
 timm
-ninjia
+ninja
 
 # Transformers 模型支持
 transformers==4.57.1
