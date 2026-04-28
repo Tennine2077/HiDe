@@ -1,7 +1,7 @@
 import os
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3,4"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "4,5,6,7"
-from utiles_15layer import *
+from utiles_internvl import *
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
