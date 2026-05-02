@@ -17,6 +17,7 @@
 
 | Date | Update |
 |:----:|:-------|
+| 🎉 **2026/05/01** | Paper accepted to ICML 2026! Congratulations! |
 | 🔥 **2026/03/07** | Added support for Qwen3-VL! |
 | 💻 **2025/12/15** | Code released on GitHub! Feel free to open issues if you have questions~ |
 | 📕 **2025/10/28** | Paper released on ArXiv! |
